@@ -13,3 +13,43 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  phone       String?  @unique
+  displayName String?  @map("display_name")
+  photoUrl    String?  @map("photo_url")
+  isVerified  Boolean  @default(false) @map("is_verified")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  notices Notice[]
+
+  @@map("users")
+}
+
+model Notice {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @db.Text
+  userId      String    @map("user_id")
+  latitude    Float
+  longitude   Float
+  address     String?
+  imageUrl    String?   @map("image_url")
+  isAnonymous Boolean   @default(false) @map("is_anonymous")
+  isResolved  Boolean   @default(false) @map("is_resolved")
+  upvotes     Int       @default(0)
+  views       Int       @default(0)
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([latitude, longitude])
+  @@map("notices")
+}
