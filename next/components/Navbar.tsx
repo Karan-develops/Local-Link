@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, MapPin } from "lucide-react";
 import ModeToggle from "./ToggleTheme";
 
 export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+
   const navigation = [
     { name: "Home", href: "/" },
     { name: "View Notices", href: "/notices" },
@@ -37,6 +42,31 @@ export default function Navbar() {
             ))}
             <ModeToggle />
           </nav>
+
+          <div className="flex items-center md:hidden">
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <nav className="flex flex-col space-y-4 mt-8 ml-5">
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="text-lg font-medium dark:text-white text-gray-700 hover:text-orange-600 transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                  <ModeToggle />
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>

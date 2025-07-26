@@ -39,7 +39,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 mb-12 mt-32 ml-36"
+            className="flex flex-col sm:flex-row gap-4 mb-12 mt-32 ml-36 sm:lg-auto"
           >
             <div className="stroke-black dark:stroke-white">
               <svg xmlns="http://www.w3.org/2000/svg" width="115" height="45">
