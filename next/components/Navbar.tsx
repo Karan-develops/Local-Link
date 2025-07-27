@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, MapPin } from "lucide-react";
 import ModeToggle from "./ToggleTheme";
+import { useLocation } from "./LocationProvider";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { location, locationName } = useLocation();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -29,6 +31,13 @@ export default function Navbar() {
               Local Link
             </span>
           </Link>
+
+          {locationName && (
+            <div className="hidden md:flex ml-64 items-center space-x-1 text-sm dark:text-gray-400 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>{locationName}</span>
+            </div>
+          )}
 
           <nav className="hidden md:flex items-center space-x-6">
             {navigation.map((item) => (
@@ -62,6 +71,12 @@ export default function Navbar() {
                       {item.name}
                     </Link>
                   ))}
+                  {locationName && (
+                    <div className="space-y-1 text-sm dark:text-gray-400 text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      <span>{locationName}</span>
+                    </div>
+                  )}
                   <ModeToggle />
                 </nav>
               </SheetContent>
