@@ -24,7 +24,10 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  notices Notice[]
+  notices       Notice[]
+  comments      Comment[]
+  upvotes       Upvote[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -33,6 +36,7 @@ model Notice {
   id          String    @id @default(cuid())
   title       String
   description String    @db.Text
+  category    Category
   userId      String    @map("user_id")
   latitude    Float
   longitude   Float
@@ -46,10 +50,75 @@ model Notice {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments      Comment[]
+  upvotesList   Upvote[]
+  notifications Notification[]
 
+  @@index([category])
   @@index([createdAt])
   @@index([userId])
   @@index([latitude, longitude])
   @@map("notices")
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  noticeId    String   @map("notice_id")
+  userId      String   @map("user_id")
+  content     String   @db.Text
+  isAnonymous Boolean  @default(false) @map("is_anonymous")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  notice Notice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([noticeId])
+  @@map("comments")
+}
+
+model Upvote {
+  id        String   @id @default(cuid())
+  noticeId  String   @map("notice_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  notice Notice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noticeId, userId], name: "unique_upvote")
+  @@map("upvotes")
+}
+
+model Notification {
+  id              String           @id @default(cuid())
+  userId          String           @map("user_id")
+  title           String
+  message         String           @db.Text
+  type            NotificationType
+  isRead          Boolean          @default(false) @map("is_read")
+  relatedNoticeId String?          @map("related_notice_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedNotice Notice? @relation(fields: [relatedNoticeId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+enum Category {
+  POWER_WATER
+  LOST_FOUND
+  LOCAL_EVENT
+  HELP_REQUEST
+  GENERAL
+}
+
+enum NotificationType {
+  NEW_NOTICE
+  UPVOTE
+  COMMENT
+  EMERGENCY
 }
