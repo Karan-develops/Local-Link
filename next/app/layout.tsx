@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { LocationProvider } from "@/components/LocationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +38,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <LocationProvider>{children}</LocationProvider>
+            <LocationProvider>
+              {children}
+              <Toaster />
+            </LocationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
