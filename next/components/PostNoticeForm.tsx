@@ -134,7 +134,7 @@ export function PostNoticeForm() {
         isAnonymous: data.isAnonymous,
       };
 
-      const response = await fetch("/api/notices", {
+      const response = await fetch("/api/post-notices", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
