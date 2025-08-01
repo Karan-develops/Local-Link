@@ -1,0 +1,214 @@
+"use server";
+
+import { getFirebaseUser } from "@/lib/firebase/firebase-auth";
+import prisma from "@/lib/prisma";
+import { filterNoticesByRadius } from "@/utils/distance";
+import { revalidatePath } from "next/cache";
+
+export async function getNotices(params: {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  category?: string;
+  search?: string;
+  sortBy?: string;
+}) {
+  try {
+    const {
+      lat,
+      lng,
+      radius = 10,
+      category,
+      search,
+      sortBy = "recent",
+    } = params;
+
+    const where: any = {};
+
+    if (category && category !== "all") {
+      where.category = category.toUpperCase();
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    let notices = await prisma.notice.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            photoUrl: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            upvotesList: true,
+          },
+        },
+      },
+      orderBy:
+        sortBy === "popular" ? { upvotes: "desc" } : { createdAt: "desc" },
+    });
+
+    if (lat && lng) {
+      notices = filterNoticesByRadius(notices, lat, lng, radius);
+    }
+
+    // FIXME: Improve type any
+    const formattedNotices = notices.map((notice: any) => ({
+      id: notice.id,
+      title: notice.title,
+      description: notice.description,
+      category: notice.category,
+      latitude: notice.latitude,
+      longitude: notice.longitude,
+      author: notice.isAnonymous ? "Anonymous" : notice.user.displayName,
+      authorAvatar: notice.isAnonymous ? null : notice.user.photoUrl,
+      timeAgo: getTimeAgo(notice.createdAt),
+      location: notice.address,
+      distance: notice.distance ? `${notice.distance.toFixed(1)} km` : null,
+      upvotes: notice._count.upvotesList,
+      comments: notice._count.comments,
+      views: notice.views,
+      isAnonymous: notice.isAnonymous,
+      isResolved: notice.isResolved,
+      imageUrl: notice.imageUrl,
+      createdAt: notice.createdAt,
+    }));
+
+    return {
+      success: true,
+      data: formattedNotices,
+      total: formattedNotices.length,
+    };
+  } catch (error) {
+    console.error("Error fetching notices:", error);
+    return { success: false, error: "Failed to fetch notices" };
+  }
+}
+
+export async function createNotice(formData: FormData) {
+  try {
+    const user = await getFirebaseUser();
+    if (!user?.uid) return { error: "Unauthorized" };
+
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const category = formData.get("category") as string;
+    const latitude = Number.parseFloat(formData.get("latitude") as string);
+    const longitude = Number.parseFloat(formData.get("longitude") as string);
+    const address = formData.get("address") as string;
+    const imageUrl = formData.get("imageUrl") as string;
+    const isAnonymous = formData.get("isAnonymous") === "true";
+    const expiresAt = formData.get("expiresAt") as string;
+
+    const notice = await prisma.notice.create({
+      data: {
+        title,
+        description,
+        category: category.toUpperCase(),
+        userId: user.uid,
+        latitude,
+        longitude,
+        address,
+        imageUrl: imageUrl || null,
+        isAnonymous: isAnonymous || false,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      },
+      include: {
+        user: {
+          select: {
+            displayName: true,
+            photoUrl: true,
+          },
+        },
+      },
+    });
+
+    // TODO: Create notifications for nearby users
+
+    revalidatePath("/notices");
+    revalidatePath("/map");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      data: notice,
+    };
+  } catch (error) {
+    console.error("Error creating notice:", error);
+    return { success: false, error: "Failed to create notice" };
+  }
+}
+
+export async function updateNotice(noticeId: string, data: any) {
+  try {
+    const user = await getFirebaseUser();
+    if (!user?.uid) return { error: "Unauthorized" };
+
+    // Checking if user owns the notice
+    const existingNotice = await prisma.notice.findUnique({
+      where: { id: noticeId },
+    });
+
+    if (!existingNotice || existingNotice.userId !== user.uid) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const updatedNotice = await prisma.notice.update({
+      where: { id: noticeId },
+      data,
+    });
+
+    revalidatePath("/notices");
+    revalidatePath("/map");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      data: updatedNotice,
+    };
+  } catch (error) {
+    console.error("Error updating notice:", error);
+    return { success: false, error: "Failed to update notice" };
+  }
+}
+
+export async function deleteNotice(noticeId: string) {
+  try {
+    const user = await getFirebaseUser();
+    if (!user?.uid) return { error: "Unauthorized" };
+
+    // Checking if user owns the notice
+    const existingNotice = await prisma.notice.findUnique({
+      where: { id: noticeId },
+    });
+
+    if (!existingNotice || existingNotice.userId !== user.uid) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    await prisma.notice.delete({
+      where: { id: noticeId },
+    });
+
+    revalidatePath("/notices");
+    revalidatePath("/map");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: "Notice deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting notice:", error);
+    return { success: false, error: "Failed to delete notice" };
+  }
+}
