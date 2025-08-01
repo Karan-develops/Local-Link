@@ -1,6 +1,6 @@
 // (Mark for Later) : Not using this currently will see later.
 
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase/firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
