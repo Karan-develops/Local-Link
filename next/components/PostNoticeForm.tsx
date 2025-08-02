@@ -134,10 +134,17 @@ export function PostNoticeForm() {
         isAnonymous: data.isAnonymous,
       };
 
+      const token = await user.getIdToken?.();
+      if (!token) {
+        toast("Authentication failed. Please sign in again.");
+        return;
+      }
+
       const response = await fetch("/api/post-notices", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(noticeData),
       });
@@ -153,6 +160,7 @@ export function PostNoticeForm() {
         throw new Error("Failed to post notice");
       }
     } catch (error) {
+      console.log("Error posting notice, Please try again later.", error);
       toast("Error posting notice, Please try again later.");
     } finally {
       setIsSubmitting(false);

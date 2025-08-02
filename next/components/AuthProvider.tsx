@@ -33,6 +33,22 @@ export function useAuth() {
 
 let confirmationResultGlobal: any = null;
 
+const syncUserWithDatabase = async (user: User) => {
+  const token = await user.getIdToken?.();
+  if (!token) return;
+
+  try {
+    await fetch("/api/create-user", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    console.error("Error syncing user to database:", error);
+  }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,15 +63,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    await syncUserWithDatabase(result.user);
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    await syncUserWithDatabase(result.user);
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await syncUserWithDatabase(result.user);
   };
 
   const signOut = async () => {

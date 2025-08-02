@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Chrome, Loader2, MapPin } from "lucide-react";
 import { useAuth } from "./AuthProvider";
+import { auth } from "@/lib/firebase/firebase";
 
 export function AuthForm() {
   const router = useRouter();
@@ -30,6 +31,10 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       await signInWithGoogle();
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        document.cookie = `__session=${token}; path=/; secure; samesite=strict`;
+      }
       toast.success("Welcome to Local Link!");
       router.push("/");
     } catch (error) {
@@ -48,6 +53,10 @@ export function AuthForm() {
       } else {
         await signUpWithEmail(email, password);
         toast.success("Account created successfully!");
+      }
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        document.cookie = `__session=${token}; path=/; secure; samesite=strict`;
       }
       router.push("/");
     } catch (error) {

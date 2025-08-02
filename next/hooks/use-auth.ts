@@ -26,5 +26,8 @@ export const loginWithGoogle = async () => {
 };
 
 export const logout = async () => {
-  return await signOut(auth);
+  await signOut(auth);
+  // Clear the __session cookie
+  document.cookie =
+    "__session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
 };
