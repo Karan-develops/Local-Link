@@ -3,6 +3,7 @@
 import { getFirebaseUser } from "@/lib/firebase/firebase-auth";
 import prisma from "@/lib/prisma";
 import { filterNoticesByRadius } from "@/utils/distance";
+import { Category } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export async function getNotices(params: {
@@ -113,7 +114,7 @@ export async function createNotice(formData: FormData) {
       data: {
         title,
         description,
-        category: category.toUpperCase(),
+        category: category.replace("-", "_").toUpperCase() as Category,
         userId: user.uid,
         latitude,
         longitude,
