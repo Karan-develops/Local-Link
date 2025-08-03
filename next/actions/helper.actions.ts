@@ -1,6 +1,6 @@
 // Written by AI
 // Helper function to get time ago
-function getTimeAgo(date: Date): string {
+export function getTimeAgo(date: Date): string {
   const now = new Date();
   const diffInMs = now.getTime() - date.getTime();
   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));

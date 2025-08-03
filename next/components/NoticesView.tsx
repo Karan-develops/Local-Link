@@ -288,9 +288,9 @@ export function NoticesView() {
                           ]
                         }
                       >
-                        {notice.categoryLabel}
+                        A{notice.categoryLabel}
                       </Badge>
-                      <div className="flex items-center text-sm text-gray-500">
+                      <div className="flex items-center text-sm dark:text-gray-200 text-gray-500">
                         <Clock className="w-4 h-4 mr-1" />
                         {notice.timeAgo}
                       </div>
@@ -308,7 +308,7 @@ export function NoticesView() {
                       />
                     )}
 
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    <p className="text-gray-600 dark:text-gray-200 text-sm mb-4 line-clamp-3">
                       {notice.description}
                     </p>
 
@@ -325,14 +325,14 @@ export function NoticesView() {
                             {notice.isAnonymous ? "A" : notice.author.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm dark:text-gray-200 text-gray-600">
                           {notice.author}
                         </span>
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
+                      <div className="flex items-center text-sm dark:text-gray-200 text-gray-500">
                         <MapPin className="w-3 h-3 mr-1" />
                         <span className="truncate max-w-20">
-                          {notice.distance}
+                          {notice.distance}A
                         </span>
                       </div>
                     </div>

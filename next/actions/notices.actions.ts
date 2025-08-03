@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { filterNoticesByRadius } from "@/utils/distance";
 import { Category } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getTimeAgo } from "./helper.actions";
 
 export async function getNotices(params: {
   lat?: number;
