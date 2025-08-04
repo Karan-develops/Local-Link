@@ -5,5 +5,10 @@ export async function setFirebaseSessionCookie() {
   if (!user) return;
 
   const token = await user.getIdToken();
-  document.cookie = `__session=${token}; path=/; secure; samesite=strict`;
+
+  await fetch("/api/set-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
 }

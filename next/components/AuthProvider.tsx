@@ -11,6 +11,7 @@ import {
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/firebase";
+import { setFirebaseSessionCookie } from "@/utils/setSessionCookie";
 
 interface AuthContextType {
   user: User | null;
@@ -65,16 +66,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     await syncUserWithDatabase(result.user);
+    await setFirebaseSessionCookie();
   };
 
   const signInWithEmail = async (email: string, password: string) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
     await syncUserWithDatabase(result.user);
+    await setFirebaseSessionCookie();
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await syncUserWithDatabase(result.user);
+    await setFirebaseSessionCookie();
   };
 
   const signOut = async () => {
