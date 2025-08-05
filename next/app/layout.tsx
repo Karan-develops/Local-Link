@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { LocationProvider } from "@/components/LocationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Toaster } from "sonner";
+import SessionWatcher from "@/components/SessionWatcher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <SessionWatcher />
             <LocationProvider>
               {children}
               <Toaster />
