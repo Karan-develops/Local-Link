@@ -28,47 +28,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { useAuth } from "./AuthProvider";
-
-// TODO: baadme real data
-// Created by AI
-const userNotices = [
-  {
-    id: "1",
-    title: "Power Cut in Sector 15 - 2PM to 6PM Today",
-    description: "Scheduled maintenance work by electricity board...",
-    category: "Power/Water Cut",
-    timeAgo: "2 hours ago",
-    upvotes: 12,
-    comments: 3,
-    views: 45,
-    isResolved: false,
-    status: "active",
-  },
-  {
-    id: "2",
-    title: "Community Diwali Celebration Planning",
-    description: "Looking for volunteers to help organize...",
-    category: "Local Event",
-    timeAgo: "1 day ago",
-    upvotes: 8,
-    comments: 15,
-    views: 78,
-    isResolved: false,
-    status: "active",
-  },
-  {
-    id: "3",
-    title: "Found: Black Wallet near Metro Station",
-    description: "Found a black leather wallet with some cards...",
-    category: "Lost & Found",
-    timeAgo: "3 days ago",
-    upvotes: 5,
-    comments: 2,
-    views: 23,
-    isResolved: true,
-    status: "resolved",
-  },
-];
+import { Notice } from "@/types/types";
 
 const statsInit = {
   totalNotices: 0,
@@ -79,7 +39,7 @@ const statsInit = {
 
 export function DashboardView() {
   const { user } = useAuth();
-  const [notices, setNotices] = useState(userNotices);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [stats, setStats] = useState(statsInit);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +47,7 @@ export function DashboardView() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch("/api/dashboard/stats");
+        const response = await fetch("/api/dashboard");
         const result = await response.json();
 
         if (result.success) {
@@ -106,7 +66,7 @@ export function DashboardView() {
     }
   }, [user]);
 
-  // Update handleDeleteNotice to use real API
+  // FIXME: Update handleDeleteNotice to use real API
   const handleDeleteNotice = async (noticeId: string) => {
     try {
       const response = await fetch(`/api/notices/${noticeId}`, {
@@ -114,7 +74,9 @@ export function DashboardView() {
       });
 
       if (response.ok) {
-        setNotices((prev) => prev.filter((notice) => notice.id !== noticeId));
+        setNotices((prev) =>
+          prev.filter((notice: Notice) => notice.id !== noticeId)
+        );
         toast("Notice deleted Successfully!");
       }
     } catch (error) {
@@ -126,7 +88,7 @@ export function DashboardView() {
   // TODO: Update handleToggleResolved to use real API
   const handleToggleResolved = async (noticeId: string) => {
     try {
-      const notice = notices.find((n) => n.id === noticeId);
+      const notice = notices.find((n: any) => n.id === noticeId);
       const response = await fetch(`/api/notices/${noticeId}`, {
         method: "PUT",
         headers: {
@@ -138,8 +100,8 @@ export function DashboardView() {
       });
 
       if (response.ok) {
-        setNotices((prev) =>
-          prev.map((notice) =>
+        setNotices((prev: any) =>
+          prev.map((notice: Notice) =>
             notice.id === noticeId
               ? {
                   ...notice,
@@ -306,7 +268,7 @@ export function DashboardView() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {notices.map((notice, index) => (
+                {notices.map((notice: Notice, index) => (
                   <motion.div
                     key={notice.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -325,7 +287,7 @@ export function DashboardView() {
                               notice.isResolved ? "secondary" : "default"
                             }
                           >
-                            {notice.status}
+                            {notice.isResolved ? "resolved" : "active"}
                           </Badge>
                         </div>
                         <p className="text-gray-600 dark:text-gray-200 text-sm mb-3 line-clamp-2">

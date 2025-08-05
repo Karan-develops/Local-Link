@@ -6,10 +6,12 @@ export type Notice = {
   categoryLabel?: string;
   timeAgo: string;
   upvotes: number;
+  views: number;
   comments: number;
   author: string;
   authorAvatar?: string;
   isAnonymous?: boolean;
   imageUrl?: string;
   distance: string;
+  isResolved: boolean;
 };
