@@ -294,3 +294,59 @@ export async function toggleUpvote(noticeId: string) {
     };
   }
 }
+
+export async function getNoticeById(noticeId: string) {
+  try {
+    const notice = await prisma.notice.findUnique({
+      where: { id: noticeId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            photoUrl: true,
+          },
+        },
+        comments: {
+          include: {
+            user: {
+              select: {
+                displayName: true,
+                photoUrl: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        _count: {
+          select: {
+            upvotesList: true,
+          },
+        },
+      },
+    });
+
+    if (!notice) {
+      return {
+        success: false,
+        error: "Notice not found",
+      };
+    }
+
+    await prisma.notice.update({
+      where: { id: noticeId },
+      data: { views: { increment: 1 } },
+    });
+
+    return {
+      success: true,
+      data: notice,
+    };
+  } catch (error) {
+    console.error("Error fetching notice:", error);
+    return {
+      success: false,
+      error: "Failed to fetch notice",
+    };
+  }
+}
