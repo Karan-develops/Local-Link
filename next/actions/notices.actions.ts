@@ -214,3 +214,83 @@ export async function deleteNotice(noticeId: string) {
     return { success: false, error: "Failed to delete notice" };
   }
 }
+
+export async function toggleUpvote(noticeId: string) {
+  try {
+    const user = await getFirebaseUser();
+    if (!user?.uid) return { error: "Unauthorized" };
+
+    const userId = user.uid;
+
+    const existingUpvote = await prisma.upvote.findUnique({
+      where: {
+        unique_upvote: {
+          noticeId,
+          userId,
+        },
+      },
+    });
+
+    if (existingUpvote) {
+      await prisma.upvote.delete({
+        where: { id: existingUpvote.id },
+      });
+
+      await prisma.notice.update({
+        where: { id: noticeId },
+        data: { upvotes: { decrement: 1 } },
+      });
+
+      revalidatePath("/notices");
+      revalidatePath("/map");
+
+      return {
+        success: true,
+        data: { action: "removed" },
+      };
+    } else {
+      await prisma.upvote.create({
+        data: {
+          noticeId,
+          userId,
+        },
+      });
+
+      await prisma.notice.update({
+        where: { id: noticeId },
+        data: { upvotes: { increment: 1 } },
+      });
+
+      const notice = await prisma.notice.findUnique({
+        where: { id: noticeId },
+        select: { userId: true, title: true },
+      });
+
+      if (notice && notice.userId !== userId) {
+        await prisma.notification.create({
+          data: {
+            userId: notice.userId,
+            title: "Someone upvoted your notice",
+            message: `Your notice "${notice.title}" received an upvote`,
+            type: "UPVOTE",
+            relatedNoticeId: noticeId,
+          },
+        });
+      }
+
+      revalidatePath("/notices");
+      revalidatePath("/map");
+
+      return {
+        success: true,
+        data: { action: "added" },
+      };
+    }
+  } catch (error) {
+    console.error("Error handling upvote:", error);
+    return {
+      success: false,
+      error: "Failed to handle upvote",
+    };
+  }
+}
