@@ -6,6 +6,7 @@ import { filterNoticesByRadius } from "@/utils/distance";
 import { Category } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getTimeAgo } from "./helper.actions";
+import { Notice } from "@/types/types";
 
 export async function getNotices(params: {
   lat?: number;
@@ -308,15 +309,7 @@ export async function getNoticeById(noticeId: string) {
           },
         },
         comments: {
-          include: {
-            user: {
-              select: {
-                displayName: true,
-                photoUrl: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
+          select: { id: true },
         },
         _count: {
           select: {
@@ -338,9 +331,31 @@ export async function getNoticeById(noticeId: string) {
       data: { views: { increment: 1 } },
     });
 
+    const transformedNotice: Notice = {
+      id: notice.id,
+      title: notice.title,
+      description: notice.description,
+      category: notice.category,
+      timeAgo: getTimeAgo(notice.createdAt),
+      upvotes: notice._count.upvotesList,
+      views: notice.views + 1,
+      comments: notice.comments.length,
+      author: notice.isAnonymous
+        ? "Anonymous"
+        : notice.user.displayName ?? "Unknown",
+      authorAvatar: notice.isAnonymous
+        ? undefined
+        : notice.user.photoUrl ?? undefined,
+      isAnonymous: notice.isAnonymous,
+      imageUrl: notice.imageUrl ?? undefined,
+      distance: "0Km",
+      isResolved: notice.isResolved,
+      hasUpVoted: false,
+    };
+
     return {
       success: true,
-      data: notice,
+      data: transformedNotice,
     };
   } catch (error) {
     console.error("Error fetching notice:", error);

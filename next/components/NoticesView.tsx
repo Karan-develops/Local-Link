@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useLocation } from "./LocationProvider";
 import { useAuth } from "./AuthProvider";
 import { Notice } from "@/types/types";
+import Link from "next/link";
 
 //  TODO: Baadme actual API calls krni h
 const categories = [
@@ -351,9 +352,15 @@ export function NoticesView() {
                           <span>{notice.comments}</span>
                         </button>
                       </div>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                      <Link href={`/notices/${notice.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hover:cursor-pointer"
+                        >
+                          View Details
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

@@ -14,4 +14,5 @@ export type Notice = {
   imageUrl?: string;
   distance: string;
   isResolved: boolean;
+  hasUpVoted?: boolean;
 };
