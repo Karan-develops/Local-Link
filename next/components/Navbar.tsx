@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, MapPin, Bell, User } from "lucide-react";
+import { Menu, MapPin, Bell, User, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,11 +16,29 @@ import {
 import ModeToggle from "./ToggleTheme";
 import { useLocation } from "./LocationProvider";
 import { useAuth } from "./AuthProvider";
+import {
+  getNotifications,
+  markAllNotificationsAsRead,
+  markNotificationsAsRead,
+} from "@/actions/notifications.actions";
+import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { location, locationName, isLoading } = useLocation();
+  const { locationName, isLoading } = useLocation();
   const { user, signOut } = useAuth();
+
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -28,6 +46,78 @@ export default function Navbar() {
     { name: "Post Notice", href: "/post" },
     { name: "Map View", href: "/map" },
   ];
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const result = await getNotifications();
+
+        if (result.success) {
+          setNotifications(result.data);
+          const unread = result.data.filter((n: any) => !n.isRead).length;
+          setUnreadCount(unread);
+        } else {
+          console.error("Failed to fetch notifications:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [user]);
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const result = await markNotificationsAsRead([notificationId], true);
+
+      if (result.success) {
+        setNotifications((prev: any) =>
+          prev.map((n: any) =>
+            n.id === notificationId ? { ...n, isRead: true } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const result = await markAllNotificationsAsRead();
+
+      if (result.success) {
+        setNotifications((prev: any) =>
+          prev.map((n: any) => ({ ...n, isRead: true }))
+        );
+        setUnreadCount(0);
+        toast("Success");
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      toast("Error");
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "COMMENT":
+        return "💬";
+      case "UPVOTE":
+        return "👍";
+      case "MENTION":
+        return "@";
+      default:
+        return "🔔";
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b">
@@ -70,10 +160,136 @@ export default function Navbar() {
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-                  </Button>
+                  <Popover
+                    open={notificationsOpen}
+                    onOpenChange={setNotificationsOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative border-2"
+                      >
+                        {notifications.length > 0 ? (
+                          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+                        ) : (
+                          <></>
+                        )}
+                        <Bell className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                          >
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0" align="end">
+                      <div className="flex items-center justify-between p-4 border-b">
+                        <h3 className="font-semibold">Notifications</h3>
+                        <div className="flex items-center space-x-2">
+                          {unreadCount > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleMarkAllAsRead}
+                              className="text-xs"
+                            >
+                              Mark all read
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setNotificationsOpen(false)}
+                            className="h-6 w-6"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <ScrollArea className="h-96">
+                        {loading ? (
+                          <div className="p-4 text-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto"></div>
+                            <p className="text-sm text-gray-500 mt-2">
+                              Loading notifications...
+                            </p>
+                          </div>
+                        ) : notifications.length === 0 ? (
+                          <div className="p-4 text-center">
+                            <Bell className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500">
+                              No notifications yet
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="divide-y">
+                            {notifications.map((notification: any) => (
+                              <div
+                                key={notification.id}
+                                className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                                  !notification.isRead
+                                    ? "bg-blue-50 border-l-4 border-l-blue-500"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  handleMarkAsRead(notification.id)
+                                }
+                              >
+                                <div className="flex items-start space-x-3">
+                                  <div className="text-lg">
+                                    {getNotificationIcon(notification.type)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {notification.title}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      {notification.message}
+                                    </p>
+                                    <div className="flex items-center justify-between mt-2">
+                                      <p className="text-xs text-gray-500">
+                                        {notification.timeAgo}
+                                      </p>
+                                      {notification.relatedNotice && (
+                                        <Link
+                                          href={`/notices/${notification.relatedNotice.id}`}
+                                          className="text-xs text-orange-600 hover:text-orange-700"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          View Notice
+                                        </Link>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {!notification.isRead && (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+
+                      {notifications.length > 0 && (
+                        <div className="p-4 border-t">
+                          <Link
+                            href="/dashboard"
+                            className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                            onClick={() => setNotificationsOpen(false)}
+                          >
+                            View all notifications →
+                          </Link>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
