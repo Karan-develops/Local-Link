@@ -4,10 +4,22 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getFirebaseUser } from "@/lib/firebase/firebase-auth";
 
-export async function createComment(formData: FormData) {
+type ServerActionResult<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+};
+
+export async function createComment(
+  formData: FormData
+): Promise<ServerActionResult> {
   try {
     const user = await getFirebaseUser();
-    if (!user?.uid) return { error: "Unauthorized" };
+
+    if (!user?.uid) {
+      return { success: false, error: "Unauthorized" };
+    }
 
     const noticeId = formData.get("noticeId") as string;
     const content = formData.get("content") as string;
@@ -52,7 +64,10 @@ export async function createComment(formData: FormData) {
 
     return {
       success: true,
-      data: comment,
+      data: {
+        ...comment,
+        createdAt: comment.createdAt.toISOString(),
+      },
     };
   } catch (error) {
     console.error("Error creating comment:", error);
@@ -63,7 +78,9 @@ export async function createComment(formData: FormData) {
   }
 }
 
-export async function getComments(noticeId: string) {
+export async function getComments(
+  noticeId: string
+): Promise<ServerActionResult> {
   try {
     const comments = await prisma.comment.findMany({
       where: { noticeId },
@@ -78,15 +95,62 @@ export async function getComments(noticeId: string) {
       orderBy: { createdAt: "desc" },
     });
 
+    const formattedComments = comments.map((comment) => ({
+      ...comment,
+      createdAt: comment.createdAt.toISOString(),
+    }));
+
     return {
       success: true,
-      data: comments,
+      data: formattedComments,
     };
   } catch (error) {
     console.error("Error fetching comments:", error);
     return {
       success: false,
       error: "Failed to fetch comments",
+    };
+  }
+}
+
+export async function deleteComment(
+  commentId: string
+): Promise<ServerActionResult> {
+  try {
+    const user = await getFirebaseUser();
+
+    if (!user?.uid) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Checking if user owns the comment
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!existingComment || existingComment.userId !== user.uid) {
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
+    await prisma.comment.delete({
+      where: { id: commentId },
+    });
+
+    revalidatePath("/notices");
+    revalidatePath(`/notices/${existingComment.noticeId}`);
+
+    return {
+      success: true,
+      message: "Comment deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return {
+      success: false,
+      error: "Failed to delete comment",
     };
   }
 }

@@ -91,3 +91,35 @@ export async function markNotificationsAsRead(
     };
   }
 }
+
+export async function markAllNotificationsAsRead(): Promise<ServerActionResult> {
+  try {
+    const user = await getFirebaseUser();
+
+    if (!user?.uid) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    await prisma.notification.updateMany({
+      where: {
+        userId: user.uid,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error updating notifications:", error);
+    return {
+      success: false,
+      error: "Failed to update notifications",
+    };
+  }
+}
