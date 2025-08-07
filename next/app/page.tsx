@@ -1,3 +1,4 @@
+import { CategoryFilterSection } from "@/components/CategoryFilterSection";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/Hero";
 import Navbar from "@/components/Navbar";
@@ -7,6 +8,7 @@ export default function Home() {
     <div className="min-h-screen">
       <Navbar />
       <HeroSection />
+      <CategoryFilterSection />
       <Footer />
     </div>
   );
