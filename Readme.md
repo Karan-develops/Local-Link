@@ -14,6 +14,8 @@
 
 A hyper-local digital noticeboard for Indian neighborhoods. Post and view public events & notices relevant to your nearby area.
 
+![banner](https://raw.githubusercontent.com/Karan-develops/Local-Link/refs/heads/main/App.png)
+
 ## 📚Tech-Stack
 
 - **(Next Full Stack):**
@@ -37,20 +39,20 @@ A hyper-local digital noticeboard for Indian neighborhoods. Post and view public
 | Variable                                      | Description                                             |
 | :-------------------------------------------- | :------------------------------------------------------ |
 | ----------------`DATABASE`------------------- | ------------------`DATABASE`--------------------------  |
-| `DATABASE_URL`                                | Database URL from neon again make a free account        |
+| DATABASE_URL                                  | Database URL from neon again make a free account        |
 | ----------------`FIREBASE`------------------- | ------------------`FIREBASE`--------------------------  |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`            | Create Firebase Project To Get this key                 |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`             | Create Firebase Project To Get this key                 |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`         | Create Firebase Project To Get this key                 |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`    | Create Firebase Project To Get this key                 |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`                 | Create Firebase Project To Get this key                 |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`         | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN              | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_PROJECT_ID               | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET           | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID      | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_APP_ID                   | Create Firebase Project To Get this key                 |
+| NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID           | Create Firebase Project To Get this key                 |
 | ----------------`LOCATION`------------------- | ------------------`LOCATION`--------------------------- |
-| `NEXT_PUBLIC_NOMINATIM_URL`                   | Contact me to get this URL                              |
+| NEXT_PUBLIC_NOMINATIM_URL                     | Contact me to get this URL                              |
 | -------------`FIREBASE-ADMIN`---------------- | ------------------`FIREBASE-ADMIN`--------------------- |
-| `FIREBASE_PROJECT_ID`                         | Download Create Admin Private Keys json file            |
-| `FIREBASE_CLIENT_EMAIL`                       | Download Create Admin Private Keys json file            |
-| `FIREBASE_PRIVATE_KEY`                        | Download Create Admin Private Keys json file            |
+| FIREBASE_PROJECT_ID                           | Download Create Admin Private Keys json file            |
+| FIREBASE_CLIENT_EMAIL                         | Download Create Admin Private Keys json file            |
+| FIREBASE_PRIVATE_KEY                          | Download Create Admin Private Keys json file            |
 
 # 💻Installation
 
