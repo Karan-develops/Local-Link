@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,33 +28,40 @@ import {
   HelpCircle,
   FileText,
   Loader2,
+  X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useLocation } from "./LocationProvider";
 import { useAuth } from "./AuthProvider";
 import { formSchema } from "@/lib/validations";
+import {
+  compressImage,
+  uploadImage,
+  validateImageFile,
+} from "@/lib/firebase/upload-image";
+import { createNotice } from "@/actions/notices.actions";
 
-// TODO: baadme real Api
 const categories = [
   {
-    value: "power-water",
+    value: "power_water",
     label: "Power/Water Cut",
     icon: Zap,
-    color: "text-yellow-500",
+    color: "text-red-500",
   },
   {
-    value: "lost-found",
+    value: "lost_found",
     label: "Lost & Found",
     icon: Search,
-    color: "text-blue-500",
+    color: "text-orange-500",
   },
   {
-    value: "local-event",
+    value: "local_event",
     label: "Local Event",
     icon: Calendar,
     color: "text-green-500",
   },
   {
-    value: "help-request",
+    value: "help_request",
     label: "Help Request",
     icon: HelpCircle,
     color: "text-purple-500",
@@ -75,9 +80,11 @@ export function PostNoticeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { location, locationName } = useLocation();
   const { user } = useAuth();
+  const router = useRouter();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -89,22 +96,42 @@ export function PostNoticeForm() {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast("File too large!!, Please select an image smaller than 5MB");
-        return;
-      }
+    if (!file) return;
 
-      setSelectedImage(file);
+    // Validating image file
+    const validation = validateImageFile(file);
+    if (!validation.isValid) {
+      toast("Invalid file");
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+
+      // Compressing image before setting preview
+      const compressedFile = await compressImage(file);
+      setSelectedImage(compressedFile);
+
+      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+
+      toast("Image selected, Image ready for upload");
+    } catch (error) {
+      toast("Error processing image, Please try selecting the image again");
+    } finally {
+      setIsUploadingImage(false);
     }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -123,45 +150,44 @@ export function PostNoticeForm() {
     setIsSubmitting(true);
 
     try {
-      const noticeData = {
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        address: locationName,
-        imageUrl: null, // TODO: Implement image upload
-        isAnonymous: data.isAnonymous,
-      };
+      let imageUrl = "";
 
-      const token = await user.getIdToken?.();
-      if (!token) {
-        toast("Authentication failed. Please sign in again.");
-        return;
+      // Upload image to Firebase if selected
+      if (selectedImage) {
+        toast("Uploading image..., Please wait while we upload your image");
+
+        imageUrl = await uploadImage(selectedImage, `notices/${user.uid}`);
       }
 
-      const response = await fetch("/api/post-notices", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(noticeData),
-      });
+      // Create form data for server action
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("category", data.category);
+      formData.append("latitude", location.latitude.toString());
+      formData.append("longitude", location.longitude.toString());
+      formData.append("address", locationName || "");
+      formData.append("isAnonymous", data.isAnonymous.toString());
+      if (imageUrl) {
+        formData.append("imageUrl", imageUrl);
+      }
 
-      if (response.ok) {
-        toast("Notice posted successfully!");
+      const result = await createNotice(formData);
+
+      if (result.success) {
+        toast(
+          "Notice posted successfully!, Your notice is now visible to the community"
+        );
         form.reset();
         setSelectedImage(null);
         setImagePreview(null);
-        // Redirect to notices page
-        window.location.href = "/notices";
+        router.push("/notices");
       } else {
-        throw new Error("Failed to post notice");
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.log("Error posting notice, Please try again later.", error);
-      toast("Error posting notice, Please try again later.");
+      console.error("Error posting notice:", error);
+      toast("Error posting notice, Please try again later");
     } finally {
       setIsSubmitting(false);
     }
@@ -265,42 +291,59 @@ export function PostNoticeForm() {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 {imagePreview ? (
                   <div className="space-y-4">
-                    <img
-                      src={imagePreview || "/placeholder.svg"}
-                      alt="Preview"
-                      className="max-h-48 mx-auto rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImagePreview(null);
-                      }}
-                    >
-                      Remove Image
-                    </Button>
+                    <div className="relative inline-block">
+                      <img
+                        src={imagePreview || "/placeholder.svg"}
+                        alt="Preview"
+                        className="max-h-48 mx-auto rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                        onClick={removeImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {selectedImage?.name} (
+                      {(selectedImage?.size || 0 / 1024 / 1024).toFixed(2)} MB)
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                    <div>
-                      <label htmlFor="image" className="cursor-pointer">
-                        <span className="text-blue-600 hover:text-blue-500">
-                          Upload an image
-                        </span>
-                        <input
-                          id="image"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageChange}
-                        />
-                      </label>
-                      <p className="text-sm text-gray-500">
-                        PNG, JPG up to 5MB
-                      </p>
-                    </div>
+                    {isUploadingImage ? (
+                      <div className="flex flex-col items-center space-y-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                        <p className="text-sm text-gray-500">
+                          Processing image...
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                        <div>
+                          <label htmlFor="image" className="cursor-pointer">
+                            <span className="text-blue-600 hover:text-blue-500 font-medium">
+                              Upload an image
+                            </span>
+                            <input
+                              id="image"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleImageChange}
+                              disabled={isUploadingImage}
+                            />
+                          </label>
+                          <p className="text-sm text-gray-500 mt-1">
+                            PNG, JPG, WebP up to 5MB
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -322,7 +365,11 @@ export function PostNoticeForm() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || isUploadingImage}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
