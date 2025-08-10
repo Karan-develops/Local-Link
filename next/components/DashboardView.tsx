@@ -66,7 +66,6 @@ export function DashboardView() {
     }
   }, [user]);
 
-  // FIXME: Update handleDeleteNotice to use real API
   const handleDeleteNotice = async (noticeId: string) => {
     try {
       const response = await fetch(`/api/notices/${noticeId}`, {
@@ -85,7 +84,6 @@ export function DashboardView() {
     }
   };
 
-  // TODO: Update handleToggleResolved to use real API
   const handleToggleResolved = async (noticeId: string) => {
     try {
       const notice = notices.find((n: any) => n.id === noticeId);

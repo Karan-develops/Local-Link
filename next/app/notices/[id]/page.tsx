@@ -1,3 +1,4 @@
+import Navbar from "@/components/Navbar";
 import { NoticeDetail } from "@/components/NoticeDetails";
 
 export default async function NoticePage({
@@ -6,5 +7,10 @@ export default async function NoticePage({
   params: Promise<{ id: string }>;
 }) {
   const paramsId = (await paramsPromise).id;
-  return <NoticeDetail noticeId={paramsId} />;
+  return (
+    <>
+      <Navbar />
+      <NoticeDetail noticeId={paramsId} />
+    </>
+  );
 }
