@@ -14,7 +14,7 @@
 
 A hyper-local digital noticeboard for Indian neighborhoods. Post and view public events & notices relevant to your nearby area.
 
-![banner](https://raw.githubusercontent.com/Karan-develops/Local-Link/refs/heads/main/App.png?token=GHSAT0AAAAAAC3Z6KUN5TKH2TUPCONYNEYC2EYUAAA)
+![banner](https://raw.githubusercontent.com/Karan-develops/Local-Link/refs/heads/main/App.png)
 
 ## 📚Tech-Stack
 
