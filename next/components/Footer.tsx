@@ -3,9 +3,11 @@ import {
   MapPin,
   Mail,
   Phone,
-  Facebook,
   Twitter,
   Instagram,
+  GithubIcon,
+  BadgeCheck,
+  Linkedin,
 } from "lucide-react";
 
 export function Footer() {
@@ -25,24 +27,34 @@ export function Footer() {
               Stay informed, stay connected, stay local.
             </p>
             <div className="flex space-x-4">
-              <a
-                href="#"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
+              <Link
+                href={"https://x.com/mrkaran000"}
+                target="_blank"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href={"https://www.instagram.com/karan_aggarwal_00/"}
+                target="_blank"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <Instagram className="h-5 w-5" />
-              </a>
+              </Link>
+              <Link
+                href={"https://github.com/Karan-develops"}
+                target="_blank"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <GithubIcon className="h-5 w-5" />
+              </Link>
+              <Link
+                href={"https://www.linkedin.com/in/karan-aggarwal-50a12b2b9/"}
+                target="_blank"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
+              </Link>
             </div>
           </div>
 
@@ -100,9 +112,12 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <span className="flex items-center justify-center gap-2 mb-4">
+            Author - Karan Aggarwal <BadgeCheck className=" text-green-500" />
+          </span>
           <p>
-            &copy; 2025 Local Link. All rights reserved. Made with ❤️ for Indian
-            communities.
+            &copy; {new Date().getFullYear()} Local Link. All rights reserved.
+            Made with ❤️ for Indian communities.
           </p>
         </div>
       </div>
