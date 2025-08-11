@@ -15,6 +15,7 @@ export async function getNotices(params: {
   category?: string;
   search?: string;
   sortBy?: string;
+  limit?: number;
 }) {
   try {
     const {
@@ -363,5 +364,31 @@ export async function getNoticeById(noticeId: string) {
       success: false,
       error: "Failed to fetch notice",
     };
+  }
+}
+
+export async function getCategoryCounts() {
+  try {
+    const counts = await prisma.notice.groupBy({
+      by: ["category"],
+      _count: {
+        id: true,
+      },
+    });
+
+    const total = await prisma.notice.count();
+
+    const categories: Record<string, number> = {};
+    counts.forEach((count) => {
+      categories[count.category] = count._count.id;
+    });
+
+    return {
+      success: true,
+      data: { categories, total },
+    };
+  } catch (error) {
+    console.error("Error fetching category counts:", error);
+    return { success: false, error: "Failed to fetch category counts" };
   }
 }

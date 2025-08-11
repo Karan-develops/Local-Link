@@ -2,10 +2,67 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, MessageSquare, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getCategoryCounts, getNotices } from "@/actions/notices.actions";
+
+interface HeroStats {
+  totalNotices: number;
+  activeUsers: number;
+  totalComments: number;
+}
 
 export function HeroSection() {
+  const [stats, setStats] = useState<HeroStats>({
+    totalNotices: 0,
+    activeUsers: 0,
+    totalComments: 0,
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoadingStats(true);
+
+        const countsResult = await getCategoryCounts();
+
+        const noticesResult = await getNotices({ limit: 100 });
+
+        if (countsResult.success && noticesResult.success) {
+          const totalNotices = countsResult.data?.total || 0;
+
+          const uniqueUsers = new Set(
+            noticesResult.data?.map((notice) => notice.author) || []
+          ).size;
+
+          const totalComments =
+            noticesResult.data?.reduce(
+              (sum, notice) => sum + notice.comments,
+              0
+            ) || 0;
+
+          setStats({
+            totalNotices,
+            activeUsers: uniqueUsers,
+            totalComments,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        setStats({
+          totalNotices: 0,
+          activeUsers: 0,
+          totalComments: 0,
+        });
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
   return (
     <section className="relative py-20 px-4 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br  opacity-50" />
@@ -88,21 +145,50 @@ export function HeroSection() {
             className="grid grid-cols-3 gap-8 max-w-md mx-auto"
           >
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-500">500+</div>
-              <div className="text-sm text-gray-600 dark:text-white">
+              <div className="text-2xl font-bold  flex items-center justify-center">
+                {isLoadingStats ? (
+                  <ShimmerText width="w-12" />
+                ) : (
+                  <>
+                    <MessageSquare className="text-orange-500 h-6 w-6 mr-1" />
+                    <span className="text-orange-400">
+                      {stats.totalNotices}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="text-sm dark:text-gray-300 text-gray-600">
+                Total Notices
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-500 flex items-center justify-center">
+                {isLoadingStats ? (
+                  <ShimmerText width="w-12" />
+                ) : (
+                  <>
+                    <Users className="h-6 w-6 mr-1" />
+                    {stats.activeUsers}
+                  </>
+                )}
+              </div>
+              <div className="text-sm dark:text-gray-300 text-gray-600">
                 Active Users
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">1.2K+</div>
-              <div className="text-sm text-gray-600 dark:text-white">
-                Notices Posted
+              <div className="text-2xl font-bold text-blue-500 flex items-center justify-center">
+                {isLoadingStats ? (
+                  <ShimmerText width="w-12" />
+                ) : (
+                  <>
+                    <TrendingUp className="h-6 w-6 mr-1" />
+                    {stats.totalComments}
+                  </>
+                )}
               </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">50+</div>
-              <div className="text-sm text-gray-600 dark:text-white">
-                Neighborhoods
+              <div className="text-sm dark:text-gray-300 text-gray-600">
+                Total Comments
               </div>
             </div>
           </motion.div>
@@ -111,3 +197,9 @@ export function HeroSection() {
     </section>
   );
 }
+
+const ShimmerText = ({ width }: { width: string }) => (
+  <div className={` ${width} h-8 rounded relative overflow-hidden`}>
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+  </div>
+);
