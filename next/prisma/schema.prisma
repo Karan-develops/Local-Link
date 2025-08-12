@@ -17,6 +17,7 @@ model User {
   id          String   @id @default(cuid())
   email       String   @unique
   phone       String?  @unique
+  location    String   @default("")
   displayName String?  @map("display_name")
   photoUrl    String?  @map("photo_url")
   isVerified  Boolean  @default(false) @map("is_verified")
