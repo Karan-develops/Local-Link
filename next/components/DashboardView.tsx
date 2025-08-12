@@ -24,6 +24,7 @@ import {
   BarChart3,
   Users,
   Bell,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -156,12 +157,20 @@ export function DashboardView() {
               Manage your notices and track community engagement
             </p>
           </div>
-          <Button asChild>
-            <Link href="/post">
-              <Plus className="mr-2 h-4 w-4" />
-              Post New Notice
-            </Link>
-          </Button>
+          <div className="flex items-end gap-2">
+            <Button asChild>
+              <Link href="/post">
+                <Plus className="mr-2 h-4 w-4" />
+                Post New Notice
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href={`/user/${user.uid}`}>
+                <User className="mr-2 h-4 w-4" />
+                Go to Profile
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 

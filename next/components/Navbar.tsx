@@ -321,7 +321,17 @@ export default function Navbar() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={signOut}>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/user/${user.uid}`}>
+                          <User className="mr-2 h-4 w-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="hover:cursor-pointer"
+                        onClick={signOut}
+                      >
                         Sign out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
