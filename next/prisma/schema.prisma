@@ -28,7 +28,23 @@ model User {
   upvotes       Upvote[]
   notifications Notification[]
 
+  following UserFollow[] @relation("UserFollowing")
+  followers UserFollow[] @relation("UserFollowers")
+
   @@map("users")
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId], name: "unique_follow")
+  @@map("user_follows")
 }
 
 model Notice {
@@ -119,5 +135,7 @@ enum NotificationType {
   NEW_NOTICE
   UPVOTE
   COMMENT
+  FOLLOW
+  MENTION
   EMERGENCY
 }
