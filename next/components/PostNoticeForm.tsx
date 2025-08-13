@@ -152,11 +152,23 @@ export function PostNoticeForm() {
     try {
       let imageUrl = "";
 
-      // Upload image to Firebase if selected
       if (selectedImage) {
-        toast("Uploading image..., Please wait while we upload your image");
+        toast("Uploading image... Please wait while we upload your image");
 
-        imageUrl = await uploadImage(selectedImage, `notices/${user.uid}`);
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", selectedImage);
+
+        const uploadRes = await fetch("/api/upload-on-cloudinary", {
+          method: "POST",
+          body: formDataUpload,
+        });
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.error || "Image upload failed");
+        }
+
+        imageUrl = uploadData.url;
       }
 
       // Create form data for server action
