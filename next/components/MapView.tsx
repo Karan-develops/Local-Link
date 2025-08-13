@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useLocation } from "./LocationProvider";
+import { getNotices } from "@/actions/notices.actions";
 
 const categories = [
   {
@@ -59,35 +60,38 @@ const categories = [
   },
 ];
 
-// Created By AI
-const mapNotices = [
-  {
-    id: "1",
-    title: "Power Cut in Sector 15",
-    category: "power-water",
-    coordinates: [28.4595, 77.0266],
-    upvotes: 12,
-  },
-  {
-    id: "2",
-    title: "Lost Dog - Bruno",
-    category: "lost-found",
-    coordinates: [28.4605, 77.0276],
-    upvotes: 8,
-  },
-  {
-    id: "3",
-    title: "Diwali Celebration",
-    category: "local-event",
-    coordinates: [28.4585, 77.0256],
-    upvotes: 25,
-  },
-];
-
 export function MapView() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [mapStyle, setMapStyle] = useState("standard");
-  const { locationName } = useLocation();
+  const { locationName, location } = useLocation();
+  const [mapNotices, setMapNotices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await getNotices({
+          lat: location?.latitude,
+          lng: location?.longitude,
+          category: selectedCategory,
+          sortBy: "recent",
+          radius: 10,
+        });
+
+        if (res.success) {
+          setMapNotices(res.data ?? []);
+        } else {
+          setMapNotices([]);
+        }
+      } catch (err) {
+        console.error(err);
+        setMapNotices([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [selectedCategory]);
 
   return (
     <div className="container mx-auto px-4">
