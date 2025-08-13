@@ -44,7 +44,10 @@ export async function PUT(
     const user = await getFirebaseUser();
 
     if (!user?.uid) {
-      return { success: false, error: "Unauthorized" };
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -81,7 +84,10 @@ export async function DELETE(
     const user = await getFirebaseUser();
 
     if (!user?.uid) {
-      return { success: false, error: "Unauthorized" };
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const paramsID = await params;

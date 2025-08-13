@@ -10,7 +10,10 @@ export async function POST(
     const user = await getFirebaseUser();
 
     if (!user?.uid) {
-      return { success: false, error: "Unauthorized" };
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const paramsID = await params;

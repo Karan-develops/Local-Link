@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
     const user = await getFirebaseUser();
 
     if (!user?.uid) {
-      return { success: false, error: "Unauthorized" };
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const result = await getNotifications();
@@ -40,7 +43,10 @@ export async function PUT(request: NextRequest) {
     const user = await getFirebaseUser();
 
     if (!user?.uid) {
-      return { success: false, error: "Unauthorized" };
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
