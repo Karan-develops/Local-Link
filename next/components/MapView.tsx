@@ -1,10 +1,7 @@
-// TODO: Real data show krna h
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -14,9 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Map,
   MapPin,
-  Layers,
   Filter,
   Zap,
   Search,
@@ -179,7 +174,6 @@ export function MapView() {
             </CardContent>
           </Card>
 
-          {/* Recent Notices */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Recent Notices</CardTitle>
@@ -218,45 +212,21 @@ export function MapView() {
           </Card>
         </div>
 
-        {/* Map Container */}
         <div className="lg:col-span-3">
           <Card>
             <CardContent className="p-0">
               <div className="h-[600px] rounded-lg flex items-center justify-center relative">
-                {/* Map Placeholder */}
-                <div className="text-center">
-                  <Map className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-500 mb-2">
-                    Interactive Map Coming Soon
-                  </h3>
-                  <p className="text-gray-500 max-w-md">
-                    This will display an interactive map with Google Maps or
-                    Leaflet showing notice locations as pins. Users can click on
-                    pins to view notice details.
-                  </p>
-                  <div className="mt-6 space-y-2">
-                    <p className="text-sm text-gray-400">
-                      Features to include:
-                    </p>
-                    <ul className="text-xs text-gray-400 space-y-1">
-                      <li>• Clustered markers for better performance</li>
-                      <li>• Real-time location updates</li>
-                      <li>• Custom markers for different categories</li>
-                      <li>• Click to view notice details</li>
-                      <li>• User location indicator</li>
-                    </ul>
+                {location?.latitude && location?.longitude ? (
+                  <iframe
+                    src={`https://www.google.com/maps?q=${location.latitude},${location.longitude}&hl=es;z=14&output=embed`}
+                    className="w-full h-full rounded-lg"
+                    loading="lazy"
+                  ></iframe>
+                ) : (
+                  <div className="text-gray-500 dark:text-gray-200">
+                    Fetching location...
                   </div>
-                </div>
-
-                {/* Map Controls Overlay */}
-                <div className="absolute top-4 right-4 space-x-2">
-                  <Button variant="outline" size="icon" className="bg-white">
-                    <Layers className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="bg-white">
-                    <MapPin className="h-4 w-4" />
-                  </Button>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
