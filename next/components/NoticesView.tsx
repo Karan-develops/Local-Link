@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // CHANGED: Added useCallback
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,106 +31,81 @@ import {
 import { toast } from "sonner";
 import { useLocation } from "./LocationProvider";
 import { useAuth } from "./AuthProvider";
-import { Notice } from "@/types/types";
+import type { Notice } from "@/types/types";
 import Link from "next/link";
+import { getNotices } from "@/actions/notices.actions";
 
-//  TODO: Baadme actual API calls krni h
 const categories = [
   { value: "all", label: "All Categories", icon: FileText },
-  { value: "power-water", label: "Power/Water Cut", icon: Zap },
-  { value: "lost-found", label: "Lost & Found", icon: Search },
-  { value: "local-event", label: "Local Event", icon: Calendar },
-  { value: "help-request", label: "Help Request", icon: HelpCircle },
+  { value: "POWER_WATER", label: "Power/Water Cut", icon: Zap },
+  { value: "LOST_FOUND", label: "Lost & Found", icon: Search },
+  { value: "LOCAL_EVENT", label: "Local Event", icon: Calendar },
+  { value: "HELP_REQUEST", label: "Help Request", icon: HelpCircle },
+  { value: "GENERAL", label: "General", icon: FileText },
 ];
 
 const categoryColors = {
-  "power-water": "bg-yellow-100 text-yellow-800",
-  "lost-found": "bg-blue-100 text-blue-800",
-  "local-event": "bg-green-100 text-green-800",
-  "help-request": "bg-purple-100 text-purple-800",
-  general: "bg-gray-100 text-gray-800",
+  POWER_WATER:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  LOST_FOUND: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  LOCAL_EVENT:
+    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  HELP_REQUEST:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  GENERAL: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 };
 
 export function NoticesView() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filteredNotices, setFilteredNotices] = useState<Notice[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
   const [radiusFilter, setRadiusFilter] = useState("10");
   const { locationName, location } = useLocation();
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          ...(location && {
-            lat: location.latitude.toString(),
-            lng: location.longitude.toString(),
-          }),
-          radius: radiusFilter,
-          ...(selectedCategory !== "all" && { category: selectedCategory }),
-          ...(searchQuery && { search: searchQuery }),
-          sortBy,
-        });
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
 
-        const response = await fetch(`/api/notices?${params}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setNotices(result.data);
-        }
-      } catch (error) {
-        console.error("Error fetching notices:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNotices();
-  }, [location, radiusFilter, selectedCategory, searchQuery, sortBy]);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
-    let filtered = notices;
+    fetchNotices();
+  }, []);
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (notice) =>
-          notice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          notice.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  const fetchNotices = async () => {
+    try {
+      setLoading(true);
+      const result = await getNotices({
+        ...(location && {
+          lat: location.latitude,
+          lng: location.longitude,
+        }),
+        radius: Number.parseInt(radiusFilter),
+        ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+        sortBy,
+      });
 
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (notice) => notice.category === selectedCategory
-      );
-    }
-
-    // Sort notices
-    filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "recent":
-          return new Date(b.timeAgo).getTime() - new Date(a.timeAgo).getTime();
-        case "popular":
-          return b.upvotes - a.upvotes;
-        case "distance":
-          return Number.parseFloat(a.distance) - Number.parseFloat(b.distance);
-        default:
-          return 0;
+      if (result.success) {
+        setNotices(result.data || []);
+      } else {
+        toast.error("Failed to load notices");
       }
-    });
-
-    setFilteredNotices(filtered);
-  }, [notices, searchQuery, selectedCategory, sortBy]);
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+      toast.error("Failed to load notices");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpvote = async (noticeId: string) => {
     if (!user) {
-      toast("Authentication required");
+      toast.error("Authentication required");
       return;
     }
 
@@ -140,26 +115,14 @@ export function NoticesView() {
       });
 
       if (response.ok) {
-        const params = new URLSearchParams({
-          ...(location && {
-            lat: location.latitude.toString(),
-            lng: location.longitude.toString(),
-          }),
-          radius: radiusFilter,
-          ...(selectedCategory !== "all" && { category: selectedCategory }),
-          ...(searchQuery && { search: searchQuery }),
-          sortBy,
-        });
-
-        const noticesResponse = await fetch(`/api/notices?${params}`);
-        const result = await noticesResponse.json();
-
-        if (result.success) {
-          setNotices(result.data);
-        }
+        await fetchNotices();
+        toast.success("Notice upvoted!");
+      } else {
+        toast.error("Failed to upvote notice");
       }
     } catch (error) {
       console.error("Error upvoting notice:", error);
+      toast.error("Failed to upvote notice");
     }
   };
 
@@ -168,7 +131,7 @@ export function NoticesView() {
       <div className="container mx-auto px-4">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading notices...</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading notices...</p>
         </div>
       </div>
     );
@@ -177,11 +140,11 @@ export function NoticesView() {
   return (
     <div className="container mx-auto px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold dark:text-gray-300 text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold dark:text-gray-100 text-gray-900 mb-2">
           Nearby Notices
         </h1>
         {locationName && (
-          <div className="flex items-center space-x-2 text-gray-400">
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
             <MapPin className="h-4 w-4" />
             <span>Showing notices near {locationName}</span>
           </div>
@@ -197,29 +160,15 @@ export function NoticesView() {
                 placeholder="Search notices..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="ml-10"
+                className="pl-10"
               />
+              {searchQuery !== debouncedSearchQuery && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                </div>
+              )}
             </div>
             <div className="flex gap-4 flex-wrap justify-end w-fit">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      <span className="flex items-center space-x-2">
-                        <category.icon className="h-4 w-4" />
-                        <span>{category.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sort by" />
@@ -267,12 +216,12 @@ export function NoticesView() {
         <TabsContent value="list" className="mt-6">
           <div className="mb-4">
             <p className="text-sm dark:text-gray-300 text-gray-600">
-              Showing {filteredNotices.length} notices
+              Showing {notices.length} notices
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNotices.map((notice, index) => (
+            {notices.map((notice, index) => (
               <motion.div
                 key={notice.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -289,7 +238,7 @@ export function NoticesView() {
                           ]
                         }
                       >
-                        A{notice.categoryLabel}
+                        {notice.category.replace("_", " ")}
                       </Badge>
                       <div className="flex items-center text-sm dark:text-gray-200 text-gray-500">
                         <Clock className="w-4 h-4 mr-1" />
@@ -333,7 +282,7 @@ export function NoticesView() {
                       <div className="flex items-center text-sm dark:text-gray-200 text-gray-500">
                         <MapPin className="w-3 h-3 mr-1" />
                         <span className="truncate max-w-20">
-                          {notice.distance}A
+                          {notice.distance}
                         </span>
                       </div>
                     </div>
@@ -368,13 +317,13 @@ export function NoticesView() {
             ))}
           </div>
 
-          {filteredNotices.length === 0 && (
+          {notices.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-300 mb-4">
                 No notices found matching your criteria
               </p>
               <Button asChild>
-                <a href="/post">Post the First Notice</a>
+                <Link href="/post">Post the First Notice</Link>
               </Button>
             </div>
           )}
@@ -386,7 +335,13 @@ export function NoticesView() {
               <div className="h-96 rounded-lg flex items-center justify-center">
                 <div className="text-center">
                   <Map className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  {/* TODO: show notice locations as pins on an interactive */}
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Map view coming soon
+                  </p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    This will show notice locations as pins on an interactive
+                    map
+                  </p>
                 </div>
               </div>
             </CardContent>

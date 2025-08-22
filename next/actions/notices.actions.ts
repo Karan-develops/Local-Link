@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { getTimeAgo } from "./helper.actions";
 import { Notice } from "@/types/types";
 
-export async function getNotices(params: {
+interface GetNoticesParams {
   lat?: number;
   lng?: number;
   radius?: number;
@@ -16,7 +16,9 @@ export async function getNotices(params: {
   search?: string;
   sortBy?: string;
   limit?: number;
-}) {
+}
+
+export async function getNotices(params: GetNoticesParams) {
   try {
     const {
       lat,
@@ -25,6 +27,7 @@ export async function getNotices(params: {
       category,
       search,
       sortBy = "recent",
+      limit = 25,
     } = params;
 
     const where: any = {};
@@ -38,6 +41,11 @@ export async function getNotices(params: {
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ];
+    }
+
+    let orderBy: any = { createdAt: "desc" };
+    if (sortBy === "popular") {
+      orderBy = { upvotesList: { _count: "desc" } };
     }
 
     let notices = await prisma.notice.findMany({
@@ -57,15 +65,22 @@ export async function getNotices(params: {
           },
         },
       },
-      orderBy:
-        sortBy === "popular" ? { upvotes: "desc" } : { createdAt: "desc" },
+      orderBy,
+      take: limit,
     });
 
     if (lat && lng) {
       notices = filterNoticesByRadius(notices, lat, lng, radius);
+
+      if (sortBy === "distance") {
+        notices.sort((a: any, b: any) => {
+          if (!a.distance) return 1;
+          if (!b.distance) return -1;
+          return a.distance - b.distance;
+        });
+      }
     }
 
-    // FIXME: Improve type any
     const formattedNotices = notices.map((notice: any) => ({
       id: notice.id,
       title: notice.title,
@@ -73,14 +88,16 @@ export async function getNotices(params: {
       category: notice.category,
       latitude: notice.latitude,
       longitude: notice.longitude,
-      author: notice.isAnonymous ? "Anonymous" : notice.user.displayName,
-      authorAvatar: notice.isAnonymous ? null : notice.user.photoUrl,
+      author: notice.isAnonymous
+        ? "Anonymous"
+        : notice.user?.displayName || "Unknown User",
+      authorAvatar: notice.isAnonymous ? null : notice.user?.photoUrl,
       timeAgo: getTimeAgo(notice.createdAt),
       location: notice.address,
-      distance: notice.distance ? `${notice.distance.toFixed(1)} km` : null,
-      upvotes: notice._count.upvotesList,
-      comments: notice._count.comments,
-      views: notice.views,
+      distance: notice.distance ? `${notice.distance.toFixed(1)} km` : "",
+      upvotes: notice._count?.upvotesList || 0,
+      comments: notice._count?.comments || 0,
+      views: notice.views || 0,
       isAnonymous: notice.isAnonymous,
       isResolved: notice.isResolved,
       imageUrl: notice.imageUrl,
@@ -94,7 +111,12 @@ export async function getNotices(params: {
     };
   } catch (error) {
     console.error("Error fetching notices:", error);
-    return { success: false, error: "Failed to fetch notices" };
+    return {
+      success: false,
+      error: "Failed to fetch notices",
+      data: [],
+      total: 0,
+    };
   }
 }
 
