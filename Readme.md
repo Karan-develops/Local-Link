@@ -31,10 +31,136 @@ A hyper-local digital noticeboard for Indian neighborhoods. Post and view public
   - Neon
   - PostgreSQL
   - Firebase
+  - Cloudinary
 - **Version Control:**
   - Git
 
-### Next
+```
+## 📁 File Structure :
+Directory structure:
+└── next/
+    ├── README.md
+    ├── components.json
+    ├── eslint.config.mjs
+    ├── next.config.ts
+    ├── package.json
+    ├── postcss.config.mjs
+    ├── tsconfig.json
+    ├── actions/
+    │   ├── comments.actions.ts
+    │   ├── dashboard.actions.ts
+    │   ├── helper.actions.ts
+    │   ├── notices.actions.ts
+    │   ├── notifications.actions.ts
+    │   └── user.actions.ts
+    ├── app/
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   ├── api/
+    │   │   ├── comments/
+    │   │   │   └── route.ts
+    │   │   ├── create-user/
+    │   │   │   └── route.ts
+    │   │   ├── dashboard/
+    │   │   │   └── route.ts
+    │   │   ├── notices/
+    │   │   │   ├── route.ts
+    │   │   │   └── [id]/
+    │   │   │       ├── route.ts
+    │   │   │       └── upvote/
+    │   │   │           └── route.ts
+    │   │   ├── notifications/
+    │   │   │   └── route.ts
+    │   │   ├── post-notices/
+    │   │   │   └── route.ts
+    │   │   ├── set-session/
+    │   │   │   └── route.ts
+    │   │   └── upload-on-cloudinary/
+    │   │       └── route.ts
+    │   ├── auth/
+    │   │   └── page.tsx
+    │   ├── dashboard/
+    │   │   └── page.tsx
+    │   ├── map/
+    │   │   └── page.tsx
+    │   ├── notices/
+    │   │   ├── page.tsx
+    │   │   └── [id]/
+    │   │       └── page.tsx
+    │   ├── post/
+    │   │   └── page.tsx
+    │   └── user/
+    │       └── [id]/
+    │           └── page.tsx
+    ├── components/
+    │   ├── AuthForm.tsx
+    │   ├── AuthProvider.tsx
+    │   ├── CardSkeleton.tsx
+    │   ├── CategoryFilterSection.tsx
+    │   ├── DashboardView.tsx
+    │   ├── Footer.tsx
+    │   ├── Hero.tsx
+    │   ├── LocationProvider.tsx
+    │   ├── MapView.tsx
+    │   ├── Navbar.tsx
+    │   ├── NoticeDetails.tsx
+    │   ├── NoticesView.tsx
+    │   ├── PostNoticeForm.tsx
+    │   ├── SessionWatcher.tsx
+    │   ├── ToggleTheme.tsx
+    │   ├── UserProfile.tsx
+    │   └── ui/
+    │       ├── avatar.tsx
+    │       ├── badge.tsx
+    │       ├── button.tsx
+    │       ├── card.tsx
+    │       ├── dropdown-menu.tsx
+    │       ├── input.tsx
+    │       ├── label.tsx
+    │       ├── popover.tsx
+    │       ├── scroll-area.tsx
+    │       ├── select.tsx
+    │       ├── separator.tsx
+    │       ├── sheet.tsx
+    │       ├── skeleton.tsx
+    │       ├── sonner.tsx
+    │       ├── switch.tsx
+    │       ├── tabs.tsx
+    │       └── textarea.tsx
+    ├── hooks/
+    │   └── use-auth.ts
+    ├── lib/
+    │   ├── cloudinary.ts
+    │   ├── prisma.ts
+    │   ├── utils.ts
+    │   ├── validations.ts
+    │   └── firebase/
+    │       ├── firebase-admin.ts
+    │       ├── firebase-auth.ts
+    │       ├── firebase.ts
+    │       └── upload-image.ts
+    ├── prisma/
+    │   ├── schema.prisma
+    │   └── migrations/
+    │       ├── migration_lock.toml
+    │       ├── 20250726095710_init/
+    │       │   └── migration.sql
+    │       ├── 20250729115813_notices/
+    │       │   └── migration.sql
+    │       ├── 20250812095037_user_profile/
+    │       │   └── migration.sql
+    │       └── 20250812101829_user_profile/
+    │           └── migration.sql
+    ├── types/
+    │   └── types.ts
+    └── utils/
+        ├── distance.ts
+        ├── refreshSessionCookie.ts
+        └── setSessionCookie.ts
+```
+
+### Environment Variables
 
 | Variable                                      | Description                                             |
 | :-------------------------------------------- | :------------------------------------------------------ |
@@ -56,7 +182,7 @@ A hyper-local digital noticeboard for Indian neighborhoods. Post and view public
 
 # 💻Installation
 
-## 🔥 NextJS
+## 🔥 Next-JS
 
 To run this project locally, follow these steps:
 
@@ -79,6 +205,8 @@ To run this project locally, follow these steps:
 ## Contributing
 
 Contributions are welcome! Please follow these steps to contribute:
+- Clone or fork this repo
+> `Run` [ git clone ` https://github.com/Karan-develops/Local-Link `]
 
 1. Fork the repository.
 2. Create a new branch:
@@ -93,4 +221,4 @@ Contributions are welcome! Please follow these steps to contribute:
 
 This repository is open source and under [MIT](https://choosealicense.com/licenses/mit/) License.
 
---- **_Lets Build & Grow Together_** **😊** ---
+--- **_Lets Build & Grow, Have a Good Day_** **😊** ---
